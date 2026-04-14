@@ -41,43 +41,43 @@ class Recommender:
         scored = []
         for song in self.songs:
             score = 0.0
-            
+
             if song.genre == user.favorite_genre:
                 score += 2.0
-            
+
             if song.mood == user.favorite_mood:
                 score += 1.0
-            
+
             energy_diff = abs(song.energy - user.target_energy)
             energy_points = 1.5 * (1 - energy_diff)
             score += energy_points
-            
+
             # Optional: acoustic preference
             if user.likes_acoustic:
                 score += song.acousticness * 0.5  # small bonus
-            
+
             scored.append((song, score))
-        
+
         # Sort by score descending
         scored.sort(key=lambda x: x[1], reverse=True)
         return [song for song, _ in scored[:k]]
 
     def explain_recommendation(self, user: UserProfile, song: Song) -> str:
         reasons = []
-        
+
         if song.genre == user.favorite_genre:
             reasons.append("genre match (+2.0)")
-        
+
         if song.mood == user.favorite_mood:
             reasons.append("mood match (+1.0)")
-        
+
         energy_diff = abs(song.energy - user.target_energy)
         energy_points = 1.5 * (1 - energy_diff)
         reasons.append(f"energy closeness (+{energy_points:.1f})")
-        
+
         if user.likes_acoustic and song.acousticness > 0.5:
             reasons.append("acoustic preference")
-        
+
         return "This song " + ", ".join(reasons) + "."
 
 def load_songs(csv_path: str) -> List[Dict]:
@@ -106,20 +106,20 @@ def score_song(user_prefs: Dict, song: Dict) -> Tuple[float, List[str]]:
     """Score a single song against user preferences; returns (total_score, list_of_reason_strings)."""
     score = 0.0
     reasons = []
-    
+
     if song['genre'] == user_prefs['genre']:
         score += 2.0
         reasons.append("genre match (+2.0)")
-    
+
     if song['mood'] == user_prefs['mood']:
         score += 1.0
         reasons.append("mood match (+1.0)")
-    
+
     energy_diff = abs(song['energy'] - user_prefs['energy'])
     energy_points = 1.5 * (1 - energy_diff)
     score += energy_points
     reasons.append(f"energy closeness (+{energy_points:.1f})")
-    
+
     return score, reasons
 
 def recommend_songs(user_prefs: Dict, songs: List[Dict], k: int = 5) -> List[Tuple[Dict, float, str]]:
@@ -129,7 +129,7 @@ def recommend_songs(user_prefs: Dict, songs: List[Dict], k: int = 5) -> List[Tup
         score, reasons = score_song(user_prefs, song)
         explanation = ", ".join(reasons)
         scored.append((song, score, explanation))
-    
+
     # Sort by score descending (highest to lowest)
     scored = sorted(scored, key=lambda x: x[1], reverse=True)
     return scored[:k]
