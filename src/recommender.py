@@ -102,34 +102,66 @@ def load_songs(csv_path: str) -> List[Dict]:
             songs.append(song)
     return songs
 
-def score_song(user_prefs: Dict, song: Dict) -> Tuple[float, List[str]]:
+# Challenge 2: Scoring mode weight presets
+SCORING_MODES = {
+    "default":        {"genre": 2.0, "mood": 1.0, "energy": 1.5},
+    "genre-first":    {"genre": 3.5, "mood": 0.5, "energy": 0.5},
+    "mood-first":     {"genre": 1.0, "mood": 2.5, "energy": 1.0},
+    "energy-focused": {"genre": 0.5, "mood": 0.5, "energy": 3.0},
+}
+
+def score_song(user_prefs: Dict, song: Dict, mode: str = "default") -> Tuple[float, List[str]]:
     """Score a single song against user preferences; returns (total_score, list_of_reason_strings)."""
+    weights = SCORING_MODES.get(mode, SCORING_MODES["default"])
     score = 0.0
     reasons = []
 
     if song['genre'] == user_prefs['genre']:
-        score += 2.0
-        reasons.append("genre match (+2.0)")
+        pts = weights["genre"]
+        score += pts
+        reasons.append(f"genre match (+{pts})")
 
     if song['mood'] == user_prefs['mood']:
-        score += 1.0
-        reasons.append("mood match (+1.0)")
+        pts = weights["mood"]
+        score += pts
+        reasons.append(f"mood match (+{pts})")
 
     energy_diff = abs(song['energy'] - user_prefs['energy'])
-    energy_points = 1.5 * (1 - energy_diff)
+    energy_points = weights["energy"] * (1 - energy_diff)
     score += energy_points
     reasons.append(f"energy closeness (+{energy_points:.1f})")
 
     return score, reasons
 
-def recommend_songs(user_prefs: Dict, songs: List[Dict], k: int = 5) -> List[Tuple[Dict, float, str]]:
-    """Score every song in the catalog and return the top-k results sorted from highest to lowest score."""
+def recommend_songs(
+    user_prefs: Dict,
+    songs: List[Dict],
+    k: int = 5,
+    mode: str = "default",
+    diversity: bool = False,
+) -> List[Tuple[Dict, float, str]]:
+    """Score every song and return top-k results; supports scoring modes and artist diversity penalty."""
     scored = []
     for song in songs:
-        score, reasons = score_song(user_prefs, song)
+        score, reasons = score_song(user_prefs, song, mode=mode)
         explanation = ", ".join(reasons)
         scored.append((song, score, explanation))
 
-    # Sort by score descending (highest to lowest)
     scored = sorted(scored, key=lambda x: x[1], reverse=True)
+
+    # Challenge 3: Diversity penalty — cap each artist at 1 appearance in top results
+    if diversity:
+        seen_artists = set()
+        diverse = []
+        penalized = []
+        for item in scored:
+            artist = item[0]['artist']
+            if artist not in seen_artists:
+                seen_artists.add(artist)
+                diverse.append(item)
+            else:
+                # Keep penalized songs available if we run out of diverse ones
+                penalized.append(item)
+        scored = (diverse + penalized)
+
     return scored[:k]

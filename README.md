@@ -114,48 +114,46 @@ You can add more tests in `tests/test_recommender.py`.
 
 ## Terminal Output
 
-Below is the output from running `python -m src.main` with the default pop/happy user profile:
+Below is the output from running `python -m src.main` with all test profiles:
 
-```
-Loaded 20 songs from catalog.
+**Profile: High-Energy Pop (default)**
+![High-Energy Pop profile output](image-1.png)
 
-User Profile: genre=pop, mood=happy, energy=0.8
-========================================================================
-  #    Title                    Score    Reasons
-------------------------------------------------------------------------
-  1    Sunrise City             4.47     [genre match (+2.0)] | [mood match (+1.0)] | [energy closeness (+1.5)]
-  2    Gym Hero                 3.30     [genre match (+2.0)] | [energy closeness (+1.3)]
-  3    Rooftop Lights           2.44     [mood match (+1.0)] | [energy closeness (+1.4)]
-  4    Neon Blossom             2.37     [mood match (+1.0)] | [energy closeness (+1.4)]
-  5    Meadow Lark              2.05     [mood match (+1.0)] | [energy closeness (+1.0)]
-========================================================================
-```
+**Profile: Chill Lofi**
+![Chill Lofi profile output](image-2.png)
 
-"Sunrise City" ranks first because it matches the user's preferred genre (pop), mood (happy), and has near-identical energy (0.82 vs 0.8). "Gym Hero" follows with a genre match and high energy. "Rooftop Lights" earns third via mood match and close energy despite being indie pop.
+**Profile: Intense Rock**
+![Intense Rock profile output](image-3.png)
+
+**Profile: Adversarial (high energy + sad)**
+![Adversarial profile output](image-4.png)
+
+**Experiment: Genre weight halved, Energy weight doubled**
+![Weight experiment output](image-5.png)
+
+"Sunrise City" ranks first for pop/happy because it matches all three criteria. The Chill Lofi profile cleanly surfaces both lofi songs at the top with near-perfect scores. The adversarial profile (r&b + sad + high energy) reveals a tension: "Velvet Rain" wins on genre and mood match despite having low energy (0.38), while high-energy songs rank 3–5 with only energy similarity.
 
 ---
 
 ## Experiments You Tried
 
-Use this section to document the experiments you ran. For example:
+### Experiment: Halve Genre Weight, Double Energy Weight
 
-- What happened when you changed the weight on genre from 2.0 to 0.5
-- What happened when you added tempo or valence to the score
-- How did your system behave for different types of users
+Changed genre bonus from +2.0 to +1.0 and energy multiplier from 1.5× to 3.0× for the pop/happy profile.
+
+**Result:** "Rooftop Lights" (indie pop) jumped from #3 to #2, overtaking "Gym Hero" (pop). The genre wall weakened enough that energy closeness and mood could compete. "Sunrise City" still ranked #1 because it matches all three criteria, but the score gap between #1 and #2 narrowed from 1.0 to 1.06 — much closer than before.
+
+**Takeaway:** Genre dominates the default ranking. Reducing its weight creates more diverse, mood-and-energy-driven results.
 
 ---
 
 ## Limitations and Risks
 
-Summarize some limitations of your recommender.
-
-Examples:
-
-- It only works on a tiny catalog
-- It does not understand lyrics or language
-- It might over favor one genre or mood
-
-You will go deeper on this in your model card.
+- Only works on a 20-song catalog — too small for real diversity
+- Does not understand lyrics, language, or cultural context
+- Exact string matching for genre/mood misses related styles (e.g., "indie pop" ≠ "pop")
+- No user history — every session starts from scratch with the same fixed profile
+- The adversarial test showed that genre match can override the user's stated energy preference entirely
 
 ---
 
@@ -165,7 +163,6 @@ Read and complete `model_card.md`:
 
 [**Model Card**](model_card.md)
 
-Write 1 to 2 paragraphs here about what you learned:
+Building this recommender made it clear that every weight in a scoring system is a design decision with real consequences. Doubling the energy weight shifted the top results noticeably — songs that "felt right" by genre suddenly lost ground to songs that felt right by energy. This is exactly what happens at scale on Spotify or YouTube: the engineers who set those weights are deciding what "relevant" means for millions of listeners, often without those listeners knowing it.
 
-- about how recommenders turn data into predictions
-- about where bias or unfairness could show up in systems like this
+The adversarial profile (r&b + sad + high energy = 0.9) was the most revealing test. "Velvet Rain" ranked first even though its energy is 0.38 — nearly the opposite of what the user asked for — because genre and mood bonuses outweighed the energy penalty. In a real product, that would be a frustrating recommendation. It shows that bias in a recommender is not always about data — sometimes it is baked directly into the weights.
