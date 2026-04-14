@@ -51,14 +51,27 @@ The catalog contains 20 songs stored in `data/songs.csv`. The 10 starter songs c
 
 ## 7. Evaluation
 
-Four user profiles were tested:
+Four user profiles were tested and the results were compared against what a human listener would expect.
 
-- **High-Energy Pop** (genre=pop, mood=happy, energy=0.8): Results matched intuition. Sunrise City ranked #1 on all three criteria. Gym Hero ranked #2 with genre match and high energy despite being "intense" not "happy."
-- **Chill Lofi** (genre=lofi, mood=chill, energy=0.35): Both lofi/chill songs ranked 1–2. Focus Flow ranked #3 on genre alone despite a "focused" mood. Results felt accurate.
-- **Intense Rock** (genre=rock, mood=intense, energy=0.9): Only one rock song exists, so #1 was obvious. Positions 2–3 (Gym Hero, Iron Curtain) both have "intense" mood, which felt right. Positions 4–5 were energy-only matches from unrelated genres.
-- **Adversarial (r&b + sad + energy=0.9)**: Revealed the biggest weakness. "Velvet Rain" won despite low energy because genre+mood outweigh the energy gap. This is a real failure case for the scoring logic.
+**Profile 1 — High-Energy Pop** (genre=pop, mood=happy, energy=0.8)
 
-Weight shift experiment: halving genre weight and doubling energy weight pushed "Rooftop Lights" (indie pop/happy) ahead of "Gym Hero" (pop/intense), showing the system is sensitive to weight changes and that the default weights strongly favor genre over energy feel.
+"Sunrise City" ranked #1 with a score of 4.47 — it matched all three criteria (pop genre, happy mood, energy=0.82). This felt exactly right. The surprise was "Gym Hero" at #2 with a score of 3.30. It is a pop song with high energy, but its mood is "intense" — not "happy." It ranked that high purely because the genre bonus (+2.0) is so strong that it carried Gym Hero above every non-pop song even without a mood match. A real listener wanting happy pop probably would not want a workout song in their top 5, but the system cannot tell the difference between "pop-happy" and "pop-intense."
+
+**Profile 2 — Chill Lofi** (genre=lofi, mood=chill, energy=0.35)
+
+"Library Rain" and "Midnight Coding" scored 4.50 and 4.39 respectively — both perfect matches on all three criteria. This was the most accurate-feeling result of all four tests. The only mild surprise was "Focus Flow" at #3 (score 3.42): it is a lofi song but its mood is "focused," not "chill." It ranked #3 purely because genre match (+2.0) outweighed the missing mood point. Whether a focused lofi track is a good recommendation for someone who wants chill music is debatable — instrumentally it might fit, but the label mismatch shows how much the system relies on exact tags.
+
+**Profile 3 — Intense Rock** (genre=rock, mood=intense, energy=0.9)
+
+"Storm Runner" ranked #1 at 4.48 — the only rock song in the catalog, so this was expected. What was interesting was positions 2 and 3: "Gym Hero" (pop/intense) and "Iron Curtain" (metal/intense) both ranked on mood match alone. They have no genre overlap with rock at all, but their "intense" mood tag earned them +1.0 each. This shows the system can surface cross-genre recommendations when mood is shared — which sometimes makes sense, and sometimes does not. A rock listener probably welcomes metal but might be confused by a pop workout track at #2.
+
+**Profile 4 — Adversarial (genre=r&b, mood=sad, energy=0.9)**
+
+This was the most revealing test. "Velvet Rain" ranked #1 with a score of 3.72 — it matched genre (r&b) and mood (sad), so it earned +3.0 from those alone. But its actual energy is 0.38, which is nearly the opposite of the user's target of 0.9. The energy closeness score was only +0.72 out of a possible 1.5. Despite this penalty, genre and mood together were still enough to win. This is a genuine failure: the user asked for something intense and driving, and the system returned a slow ballad because the labels matched. It confirms that the +2.0 genre weight can override meaningful numeric signals when the catalog is small.
+
+**Weight Shift Experiment** (genre weight halved to 1.0, energy weight doubled to 3.0)
+
+Running the pop/happy profile with adjusted weights pushed "Rooftop Lights" (indie pop/happy) from #3 to #2, overtaking "Gym Hero." With genre worth less, a song that closely matches energy and mood but sits in a related genre can finally compete. "Sunrise City" still ranked #1 because it wins on all three criteria regardless of weights. This experiment confirmed that the default scoring is genre-dominant by design, and that small weight changes have outsized effects on diversity in the results.
 
 ---
 
@@ -73,6 +86,10 @@ Weight shift experiment: halving genre weight and doubling energy weight pushed 
 
 ## 9. Personal Reflection
 
-The biggest surprise was how much the weights matter. Changing genre from +2.0 to +1.0 was a single number change, but it visibly reshuffled the top results — songs that felt "right" by energy suddenly competed with songs that felt "right" by genre. That made it real: every recommendation system has numbers like these baked in, and the people who set them are making decisions about what "good" means for everyone using the product.
+**Biggest learning moment:** The biggest learning moment was realizing that weights are design decisions, not just numbers. When I halved the genre weight from +2.0 to +1.0, the entire top-5 list reshuffled — songs that previously had no chance suddenly competed because energy and mood could finally make a difference. That one change showed me that every recommender system is really a statement about what matters most to the people who built it, not just the people using it. Engineers at Spotify or YouTube are making those same choices at a scale that affects millions of listeners, often invisibly.
 
-The adversarial test was also humbling. A user who wants sad r&b at high energy gets "Velvet Rain" — a slow, low-energy song — because the genre and mood labels match. The system did exactly what it was told to do, and the output was still wrong. That gap between "follows the rules" and "actually helpful" is probably the most important thing to carry forward when thinking about real AI recommenders.
+**How AI tools helped and when I double-checked:** AI tools helped most with boilerplate structure — generating the CSV format for new songs, suggesting the `tabulate` library for formatting, and explaining the difference between `.sort()` and `sorted()`. But I had to double-check the scoring logic carefully because the AI-suggested energy formula worked mathematically but I needed to verify it actually rewarded *closeness* and not just *highness*. I also had to validate that the diversity penalty correctly de-duplicated by artist rather than by genre, since an early version would have been too aggressive. The rule I learned: AI suggestions are a fast starting point, but the only way to trust them is to trace through an example by hand.
+
+**What surprised me about simple algorithms feeling like recommendations:** The most surprising thing was how quickly the output started feeling "right" even with just three scoring rules. When the Chill Lofi profile returned Library Rain and Midnight Coding at the top with scores of 4.50 and 4.39, it genuinely looked like something Spotify might suggest. The illusion of intelligence comes from the combination of ranking (so only the best appear), explainability (so the reasons feel logical), and enough variety in the catalog that the top result isn't always obvious. The system has no understanding of music at all — it just counts matches — but presented in a clean table with reasons, it reads like it does.
+
+**What I would try next:** If I extended this project, I would first add valence to the scoring function since it is already loaded from the CSV and captures whether a song sounds positive or negative — a dimension that mood labels alone miss. Second, I would implement fuzzy genre matching so that "indie pop" scores partial credit against a "pop" preference rather than zero. Third, I would build a simple feedback loop where the user rates the top recommendation and the weights adjust slightly based on their response, turning the static profile into something that learns over a session.
