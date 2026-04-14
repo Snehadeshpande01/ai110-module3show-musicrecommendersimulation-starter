@@ -15,7 +15,6 @@ def print_recommendations(profile_label: str, user_prefs: dict, songs: list,
 
     recommendations = recommend_songs(user_prefs, songs, k=5, mode=mode, diversity=diversity)
 
-    # Challenge 4: Visual Summary Table via tabulate
     rows = []
     for i, (song, score, reasons_str) in enumerate(recommendations, 1):
         reasons_display = " | ".join(f"[{r}]" for r in reasons_str.split(", "))
@@ -29,34 +28,33 @@ def main() -> None:
     songs = load_songs("data/songs.csv")
     print(f"Loaded {len(songs)} songs from catalog.")
 
-    user_prefs_pop   = {"genre": "pop",   "mood": "happy",   "energy": 0.8}
-    user_prefs_lofi  = {"genre": "lofi",  "mood": "chill",   "energy": 0.35}
-    user_prefs_rock  = {"genre": "rock",  "mood": "intense", "energy": 0.9}
-    user_prefs_adv   = {"genre": "r&b",   "mood": "sad",     "energy": 0.9}
+    user_prefs_pop  = {"genre": "pop",  "mood": "happy",   "energy": 0.8}
+    user_prefs_lofi = {"genre": "lofi", "mood": "chill",   "energy": 0.35}
+    user_prefs_rock = {"genre": "rock", "mood": "intense", "energy": 0.9}
+    user_prefs_adv  = {"genre": "r&b",  "mood": "sad",     "energy": 0.9}
 
-    # --- Default profile ---
-    print_recommendations("High-Energy Pop", user_prefs_pop, songs)
-
-    # --- Challenge 2: Scoring Modes ---
+    # ── Core Profiles ────────────────────────────────────────────
     print("\n" + "=" * 60)
-    print("  CHALLENGE 2: Multiple Scoring Modes (pop/happy profile)")
+    print("  CORE PROFILES")
+    print("=" * 60)
+    print_recommendations("High-Energy Pop",             user_prefs_pop,  songs)
+    print_recommendations("Chill Lofi",                  user_prefs_lofi, songs)
+    print_recommendations("Intense Rock",                user_prefs_rock, songs)
+    print_recommendations("Adversarial (sad + 0.9)",     user_prefs_adv,  songs)
+
+    # ── Optional Extension: Scoring Modes (Challenge 2) ──────────
+    print("\n" + "=" * 60)
+    print("  OPTIONAL: Multiple Scoring Modes (pop/happy profile)")
     print("=" * 60)
     for mode in SCORING_MODES:
         print_recommendations(f"Pop/Happy - {mode}", user_prefs_pop, songs, mode=mode)
 
-    # --- Challenge 3: Diversity Penalty ---
+    # ── Optional Extension: Diversity Penalty (Challenge 3) ──────
     print("\n" + "=" * 60)
-    print("  CHALLENGE 3: Diversity Penalty (no repeat artists)")
+    print("  OPTIONAL: Artist Diversity Penalty")
     print("=" * 60)
     print_recommendations("Chill Lofi - no diversity", user_prefs_lofi, songs, diversity=False)
     print_recommendations("Chill Lofi - diversity ON", user_prefs_lofi, songs, diversity=True)
-
-    # --- Other profiles ---
-    print("\n" + "=" * 60)
-    print("  Other Profiles")
-    print("=" * 60)
-    print_recommendations("Intense Rock",              user_prefs_rock, songs)
-    print_recommendations("Adversarial (sad + 0.9)",   user_prefs_adv,  songs)
 
 
 if __name__ == "__main__":

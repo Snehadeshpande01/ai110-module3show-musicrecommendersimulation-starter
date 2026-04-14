@@ -116,22 +116,40 @@ You can add more tests in `tests/test_recommender.py`.
 
 Below is the output from running `python -m src.main` with all test profiles:
 
-**Profile: High-Energy Pop (default)**
+---
+
+**Profile 1: High-Energy Pop** — genre=pop, mood=happy, energy=0.8
 ![High-Energy Pop profile output](image-1.png)
 
-**Profile: Chill Lofi**
+> "Sunrise City" earns the top spot with a near-perfect score of 4.47 — it matches all three criteria (pop genre, happy mood, energy=0.82 vs target 0.8). "Gym Hero" ranks #2 despite having an "intense" mood, not "happy", because the +2.0 genre bonus for pop is strong enough to carry it over every non-pop song. This is the most important thing to notice: genre dominates. Songs ranked #3–#5 (Rooftop Lights, Neon Blossom, Meadow Lark) all match the happy mood but come from different genres — they can only compete on mood and energy, never on genre.
+
+---
+
+**Profile 2: Chill Lofi** — genre=lofi, mood=chill, energy=0.35
 ![Chill Lofi profile output](image-2.png)
 
-**Profile: Intense Rock**
+> This is the cleanest result of all four profiles. "Library Rain" (4.50) and "Midnight Coding" (4.39) both hit genre, mood, and energy — near-perfect matches. "Focus Flow" ranks #3 on genre alone even though its mood is "focused" not "chill", showing again that the genre bonus can carry a song past a missing mood point. Positions #4 and #5 (Spacewalk Thoughts, Late Night Cruisin) have no lofi genre but win on chill mood and close energy. The chill lofi profile works well because the catalog has exactly the songs this type of listener needs.
+
+---
+
+**Profile 3: Intense Rock** — genre=rock, mood=intense, energy=0.9
 ![Intense Rock profile output](image-3.png)
 
-**Profile: Adversarial (high energy + sad)**
+> "Storm Runner" is the only rock song in the catalog so #1 was never in doubt (4.48, all three criteria matched). The interesting result is #2 and #3: "Gym Hero" (pop/intense) and "Iron Curtain" (metal/intense) both have no genre overlap with rock at all, but their "intense" mood tag earns +1.0 each. A rock fan might accept metal at #3 — that feels musically reasonable — but seeing a pop workout song at #2 is jarring. It reveals that mood matching alone can produce genre-inappropriate suggestions when the catalog only has one song of the right genre.
+
+---
+
+**Profile 4: Adversarial** — genre=r&b, mood=sad, energy=0.9
 ![Adversarial profile output](image-4.png)
 
-**Experiment: Genre weight halved, Energy weight doubled**
+> This profile was designed to expose a weakness, and it did. "Velvet Rain" ranks #1 with a score of 3.72 — it matches genre (r&b) and mood (sad) for +3.0 combined — but its actual energy is 0.38, nearly the opposite of the user's target of 0.9. The energy penalty brings it to only +0.72 out of a possible 1.5, yet it still wins comfortably. The user asked for something driving and intense; the system returned a slow ballad. This is not a bug — it is the scoring logic working exactly as designed — but it shows that when genre and mood labels win, the numeric energy signal can be completely overridden. Positions #3–#5 are all energy-only matches from unrelated genres, confirming the catalog simply has no high-energy sad r&b songs.
+
+---
+
+**Experiment: Genre weight 1.0 (halved), Energy weight 3.0 (doubled)** — pop/happy profile
 ![Weight experiment output](image-5.png)
 
-"Sunrise City" ranks first for pop/happy because it matches all three criteria. The Chill Lofi profile cleanly surfaces both lofi songs at the top with near-perfect scores. The adversarial profile (r&b + sad + high energy) reveals a tension: "Velvet Rain" wins on genre and mood match despite having low energy (0.38), while high-energy songs rank 3–5 with only energy similarity.
+> Halving the genre bonus and doubling the energy multiplier reshuffles the top 5 significantly. "Rooftop Lights" (indie pop/happy) jumps from #3 to #2, overtaking "Gym Hero" (pop/intense). With genre worth less, a song in a related genre that closely matches energy and mood can finally compete. "Gym Hero" drops to #4 — its high energy is still valued but its "intense" mood and weaker genre match now cost it more relatively. "Sunrise City" stays #1 because it wins on all three criteria regardless of weights. The key insight: the default scoring is intentionally genre-dominant. One number change is enough to shift the entire philosophy of what "good" means.
 
 ---
 
